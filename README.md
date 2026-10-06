@@ -49,6 +49,10 @@ Jest y React Native Testing Library verifican el renderizado e interacciones del
 - `src/utils/validators.ts`: reglas de validación.
 - `__tests__/`: pruebas automatizadas.
 
+### Resultado de las pruebas
+
+![Resultado de Jest: 3 suites y 8 tests aprobados](docs/tests.png)
+
 ## Video demo
 
-**Pendiente de incorporar:** enlace de YouTube con una demostración de no más de un minuto.
+https://youtube.com/shorts/_2fgLfN9sKk
