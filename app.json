@@ -1,0 +1,19 @@
+{
+  "expo": {
+    "name": "Mi lista de compras",
+    "slug": "lista-compras-parcial",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.francobarrera.listacompras"
+    },
+    "android": {
+      "package": "com.francobarrera.listacompras"
+    },
+    "plugins": [
+      "expo-notifications"
+    ]
+  }
+}
