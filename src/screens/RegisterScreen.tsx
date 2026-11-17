@@ -10,29 +10,42 @@ import {
 } from "react-native";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { RootStackParamList } from "../types";
-import { useApp } from "../context/AppContext";
+import { useAppStore } from "../store/useAppStore";
 import { common, colors } from "../theme";
 import PrimaryButton from "../components/PrimaryButton";
 import { validateCredentials } from "../utils/validators";
+
 export default function RegisterScreen({
   navigation,
 }: NativeStackScreenProps<RootStackParamList, "Registro">) {
-  const { register, busy } = useApp();
+  const register = useAppStore((state) => {
+    return state.register;
+  });
+  const busy = useAppStore((state) => {
+    return state.busy;
+  });
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [error, setError] = useState("");
+
   async function submit() {
     const validation = validateCredentials(username, password);
+
     if (validation) {
       setError(validation);
+
       return;
     }
+
     if (password !== confirm) {
       setError("Las contraseñas no coinciden.");
+
       return;
     }
+
     setError("");
+
     try {
       await register(username, password);
       Alert.alert("Cuenta creada", "Ya podés iniciar sesión con tus datos.");
@@ -41,6 +54,7 @@ export default function RegisterScreen({
       setError(e instanceof Error ? e.message : "No se pudo registrar.");
     }
   }
+
   return (
     <KeyboardAvoidingView
       style={common.page}
@@ -95,7 +109,10 @@ export default function RegisterScreen({
           />
         </View>
         {!!error && (
-          <Text accessibilityRole="alert" style={common.error}>
+          <Text
+            accessibilityRole="alert"
+            style={common.error}
+          >
             {error}
           </Text>
         )}

@@ -1,4 +1,5 @@
 import { StyleSheet } from "react-native";
+
 export const colors = {
   ink: "#18332B",
   muted: "#63776F",
@@ -8,6 +9,7 @@ export const colors = {
   white: "#FFFFFF",
   red: "#AF3636",
 };
+
 export const common = StyleSheet.create({
   page: { flex: 1, backgroundColor: colors.light },
   content: { padding: 24, gap: 16 },

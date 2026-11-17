@@ -13,7 +13,38 @@
       "package": "com.francobarrera.listacompras"
     },
     "plugins": [
-      "expo-notifications"
+      "expo-notifications",
+      "expo-status-bar",
+      [
+        "expo-image-picker",
+        {
+          "cameraPermission": "Permití usar la cámara para fotografiar tus productos.",
+          "photosPermission": "Permití acceder a tus fotos para elegir una imagen del producto.",
+          "microphonePermission": false
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Permití usar tu ubicación para asociar el comercio al producto.",
+          "isIosBackgroundLocationEnabled": false,
+          "isAndroidBackgroundLocationEnabled": false,
+          "isAndroidForegroundServiceEnabled": false
+        }
+      ],
+      [
+        "expo-contacts",
+        {
+          "contactsPermission": "Permití acceder a tus contactos para asociar uno al producto."
+        }
+      ],
+      [
+        "expo-calendar",
+        {
+          "calendarPermission": "Permití acceder a tus calendarios para elegir dónde recordar la compra.",
+          "writeOnlyAccess": false
+        }
+      ]
     ]
   }
 }

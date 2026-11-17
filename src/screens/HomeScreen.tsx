@@ -3,23 +3,39 @@ import { View, Text, FlatList, Alert, Button, StyleSheet } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { RootStackParamList } from "../types";
-import { useApp } from "../context/AppContext";
+import { useAppStore } from "../store/useAppStore";
 import { common, colors } from "../theme";
 import PrimaryButton from "../components/PrimaryButton";
 import ProductItem from "../components/ProductItem";
+
 export default function HomeScreen({
   navigation,
 }: NativeStackScreenProps<RootStackParamList, "Home">) {
-  const {
-    username,
-    products,
-    busy,
-    logout,
-    toggleProduct,
-    deleteProduct,
-    remind,
-  } = useApp();
-  const pending = products.filter((p) => !p.bought).length;
+  const username = useAppStore((state) => {
+    return state.username;
+  });
+  const products = useAppStore((state) => {
+    return state.products;
+  });
+  const busy = useAppStore((state) => {
+    return state.busy;
+  });
+  const logout = useAppStore((state) => {
+    return state.logout;
+  });
+  const toggleProduct = useAppStore((state) => {
+    return state.toggleProduct;
+  });
+  const deleteProduct = useAppStore((state) => {
+    return state.deleteProduct;
+  });
+  const remind = useAppStore((state) => {
+    return state.remind;
+  });
+  const pending = products.filter((p) => {
+    return !p.bought;
+  }).length;
+
   async function perform(action: () => Promise<void>) {
     try {
       await action();
@@ -30,21 +46,32 @@ export default function HomeScreen({
       );
     }
   }
+
   function remove(id: string) {
     Alert.alert("Eliminar producto", "¿Querés quitarlo de tu lista?", [
       { text: "Cancelar", style: "cancel" },
       {
         text: "Eliminar",
         style: "destructive",
-        onPress: () => perform(() => deleteProduct(id)),
+        onPress: () => {
+          return perform(() => {
+            return deleteProduct(id);
+          });
+        },
       },
     ]);
   }
+
   return (
-    <SafeAreaView style={common.page} edges={["bottom"]}>
+    <SafeAreaView
+      style={common.page}
+      edges={["bottom"]}
+    >
       <FlatList
         data={products}
-        keyExtractor={(p) => p.id}
+        keyExtractor={(p) => {
+          return p.id;
+        }}
         contentContainerStyle={styles.list}
         ListHeaderComponent={
           <View style={styles.header}>
@@ -58,36 +85,49 @@ export default function HomeScreen({
             </View>
             <PrimaryButton
               title="Agregar producto"
-              onPress={() => navigation.navigate("Alta")}
+              onPress={() => {
+                return navigation.navigate("Alta");
+              }}
               disabled={busy}
             />
             <Button
               title="Recordarme en 10 segundos"
               color={colors.green}
               disabled={busy || pending === 0}
-              onPress={() =>
-                perform(async () => {
+              onPress={() => {
+                return perform(async () => {
                   await remind();
                   Alert.alert(
                     "Recordatorio programado",
                     "Recibirás una notificación en 10 segundos.",
                   );
-                })
-              }
+                });
+              }}
             />
             <Text style={styles.note}>
               Si modificás la lista, volvé a programar el recordatorio.
             </Text>
           </View>
         }
-        renderItem={({ item }) => (
-          <ProductItem
-            product={item}
-            disabled={busy}
-            onToggle={() => perform(() => toggleProduct(item.id))}
-            onDelete={() => remove(item.id)}
-          />
-        )}
+        renderItem={({ item }) => {
+          return (
+            <ProductItem
+              product={item}
+              disabled={busy}
+              onToggle={() => {
+                return perform(() => {
+                  return toggleProduct(item.id);
+                });
+              }}
+              onDelete={() => {
+                return remove(item.id);
+              }}
+              onOpen={() => {
+                return navigation.navigate("Detalle", { id: item.id });
+              }}
+            />
+          );
+        }}
         ListEmptyComponent={
           <View style={styles.empty}>
             <Text style={styles.emptyTitle}>Tu lista empieza acá.</Text>
@@ -102,12 +142,15 @@ export default function HomeScreen({
           title="Cerrar sesión"
           color={colors.muted}
           disabled={busy}
-          onPress={() => perform(logout)}
+          onPress={() => {
+            return perform(logout);
+          }}
         />
       </View>
     </SafeAreaView>
   );
 }
+
 const styles = StyleSheet.create({
   list: { padding: 24, flexGrow: 1 },
   header: { gap: 14, marginBottom: 20 },

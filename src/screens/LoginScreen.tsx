@@ -10,30 +10,42 @@ import {
 } from "react-native";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { RootStackParamList } from "../types";
-import { useApp } from "../context/AppContext";
+import { useAppStore } from "../store/useAppStore";
 import { common, colors } from "../theme";
 import PrimaryButton from "../components/PrimaryButton";
 import { validateCredentials } from "../utils/validators";
+
 export default function LoginScreen({
   navigation,
 }: NativeStackScreenProps<RootStackParamList, "Login">) {
-  const { login, busy } = useApp();
+  const login = useAppStore((state) => {
+    return state.login;
+  });
+  const busy = useAppStore((state) => {
+    return state.busy;
+  });
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+
   async function submit() {
     const validation = validateCredentials(username, password);
+
     if (validation) {
       setError(validation);
+
       return;
     }
+
     setError("");
+
     try {
       await login(username, password);
     } catch (e) {
       setError(e instanceof Error ? e.message : "No se pudo iniciar sesión.");
     }
   }
+
   return (
     <KeyboardAvoidingView
       style={common.page}
@@ -81,7 +93,10 @@ export default function LoginScreen({
           />
         </View>
         {!!error && (
-          <Text accessibilityRole="alert" style={common.error}>
+          <Text
+            accessibilityRole="alert"
+            style={common.error}
+          >
             {error}
           </Text>
         )}
@@ -94,7 +109,9 @@ export default function LoginScreen({
           title="Crear una cuenta"
           color={colors.green}
           disabled={busy}
-          onPress={() => navigation.navigate("Registro")}
+          onPress={() => {
+            return navigation.navigate("Registro");
+          }}
         />
       </ScrollView>
     </KeyboardAvoidingView>

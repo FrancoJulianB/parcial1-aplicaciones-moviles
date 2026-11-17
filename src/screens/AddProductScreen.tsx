@@ -1,5 +1,8 @@
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import {
+  Button,
+  Image,
+  Linking,
   View,
   Text,
   TextInput,
@@ -8,32 +11,105 @@ import {
   ScrollView,
 } from "react-native";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
-import { RootStackParamList } from "../types";
-import { useApp } from "../context/AppContext";
+import { RootStackParamList, ShopLocation, ProductContact } from "../types";
+import { useAppStore } from "../store/useAppStore";
 import { common, colors } from "../theme";
 import PrimaryButton from "../components/PrimaryButton";
 import { validateProduct } from "../utils/validators";
+import { pickPhoto, PhotoSource } from "../services/imagePicker";
+
+import LocationField from "../components/LocationField";
+import ContactField from "../components/ContactField";
+
 export default function AddProductScreen({
   navigation,
 }: NativeStackScreenProps<RootStackParamList, "Alta">) {
-  const { addProduct, busy } = useApp();
+  const addProduct = useAppStore((state) => {
+    return state.addProduct;
+  });
+  const busy = useAppStore((state) => {
+    return state.busy;
+  });
   const [name, setName] = useState("");
   const [quantity, setQuantity] = useState("1");
   const [error, setError] = useState("");
-  async function submit() {
-    const validation = validateProduct(name, quantity);
-    if (validation) {
-      setError(validation);
+  const [photo, setPhoto] = useState<string>();
+  const [working, setWorking] = useState(false);
+  const [message, setMessage] = useState("");
+  const [settings, setSettings] = useState(false);
+  const [location, setLocation] = useState<ShopLocation>();
+  const [locating, setLocating] = useState(false);
+  const [contact, setContact] = useState<ProductContact>();
+  const [contactWorking, setContactWorking] = useState(false);
+  const locked = useRef(false);
+
+  async function choose(source: PhotoSource) {
+    if (locked.current || busy || locating || contactWorking) {
       return;
     }
-    setError("");
+
+    locked.current = true;
+    setWorking(true);
+    setSettings(false);
+    setMessage(
+      source === "camera"
+        ? "Comprobando permiso de cámara…"
+        : "Comprobando permiso de galería…",
+    );
+
     try {
-      await addProduct(name, Number(quantity));
+      const result = await pickPhoto(source);
+
+      if (result.status === "denied") {
+        setSettings(!result.canAskAgain);
+        setMessage(
+          (source === "camera"
+            ? "No hay permiso para usar la cámara. Podés elegir una foto de la galería."
+            : "No hay permiso para acceder a la galería.") +
+            (result.canAskAgain
+              ? " Podés volver a solicitarlo con el botón."
+              : " Habilitá el permiso desde Ajustes."),
+        );
+      } else if (result.status === "selected") {
+        setPhoto(result.uri);
+        setMessage("");
+      } else {
+        setMessage("");
+      }
+    } catch {
+      setMessage("No se pudo cargar la foto. Intentá nuevamente.");
+    } finally {
+      locked.current = false;
+      setWorking(false);
+    }
+  }
+
+  async function submit() {
+    if (locked.current || busy || locating || contactWorking) {
+      return;
+    }
+
+    const validation = validateProduct(name, quantity);
+
+    if (validation) {
+      setError(validation);
+
+      return;
+    }
+
+    setError("");
+    locked.current = true;
+
+    try {
+      await addProduct(name, Number(quantity), photo, location, contact);
       navigation.goBack();
     } catch {
       setError("No se pudo guardar el producto. Intentá nuevamente.");
+    } finally {
+      locked.current = false;
     }
   }
+
   return (
     <KeyboardAvoidingView
       style={common.page}
@@ -57,7 +133,7 @@ export default function AddProductScreen({
             maxLength={80}
             value={name}
             onChangeText={setName}
-            editable={!busy}
+            editable={!busy && !working && !locating && !contactWorking}
           />
         </View>
         <View>
@@ -69,18 +145,95 @@ export default function AddProductScreen({
             maxLength={3}
             value={quantity}
             onChangeText={setQuantity}
-            editable={!busy}
+            editable={!busy && !working && !locating && !contactWorking}
           />
         </View>
+        <Text style={common.label}>Foto (opcional)</Text>
+        {photo && (
+          <Image
+            source={{ uri: photo }}
+            accessibilityLabel="Foto del nuevo producto"
+            resizeMode="contain"
+            style={{
+              width: "100%",
+              height: 220,
+              borderRadius: 16,
+              backgroundColor: colors.white,
+            }}
+          />
+        )}
+        <PrimaryButton
+          title="Tomar foto"
+          onPress={() => {
+            return choose("camera");
+          }}
+          disabled={busy || working || locating || contactWorking}
+        />
+        <PrimaryButton
+          title="Elegir de la galería"
+          onPress={() => {
+            return choose("library");
+          }}
+          disabled={busy || working || locating || contactWorking}
+        />
+        {photo && (
+          <Button
+            title="Quitar foto"
+            color={colors.red}
+            disabled={busy || working || locating || contactWorking}
+            onPress={() => {
+              setPhoto(undefined);
+              setMessage("");
+              setSettings(false);
+            }}
+          />
+        )}
+        {!!message && (
+          <Text
+            accessibilityRole="alert"
+            style={common.subtitle}
+          >
+            {message}
+          </Text>
+        )}
+        {settings && (
+          <Button
+            title="Abrir Ajustes"
+            color={colors.green}
+            disabled={busy || working || locating || contactWorking}
+            onPress={() => {
+              return Linking.openSettings().catch(() => {
+                return setMessage(
+                  "Abrí Ajustes del teléfono para habilitar el permiso.",
+                );
+              });
+            }}
+          />
+        )}
+        <LocationField
+          value={location}
+          onChange={setLocation}
+          onWorking={setLocating}
+          disabled={busy || working || contactWorking}
+        />
+        <ContactField
+          value={contact}
+          onChange={setContact}
+          onWorking={setContactWorking}
+          disabled={busy || working || locating}
+        />
         {!!error && (
-          <Text accessibilityRole="alert" style={common.error}>
+          <Text
+            accessibilityRole="alert"
+            style={common.error}
+          >
             {error}
           </Text>
         )}
         <PrimaryButton
           title={busy ? "Guardando…" : "Guardar producto"}
           onPress={submit}
-          disabled={busy}
+          disabled={busy || working || locating || contactWorking}
         />
       </ScrollView>
     </KeyboardAvoidingView>

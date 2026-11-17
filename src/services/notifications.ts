@@ -1,28 +1,40 @@
 import * as Notifications from "expo-notifications";
 import { Platform } from "react-native";
 Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowBanner: true,
-    shouldShowList: true,
-    shouldPlaySound: true,
-    shouldSetBadge: false,
-  }),
+  handleNotification: async () => {
+    return {
+      shouldShowBanner: true,
+      shouldShowList: true,
+      shouldPlaySound: true,
+      shouldSetBadge: false,
+    };
+  },
 });
+
 export async function scheduleShoppingReminder(pending: number) {
-  if (Platform.OS === "web")
+  if (Platform.OS === "web") {
     throw new Error("Probá las notificaciones en el teléfono.");
-  if (Platform.OS === "android")
+  }
+
+  if (Platform.OS === "android") {
     await Notifications.setNotificationChannelAsync("compras", {
       name: "Recordatorios de compras",
       importance: Notifications.AndroidImportance.HIGH,
     });
+  }
+
   let permission = await Notifications.getPermissionsAsync();
-  if (!permission.granted)
+
+  if (!permission.granted) {
     permission = await Notifications.requestPermissionsAsync();
-  if (!permission.granted)
+  }
+
+  if (!permission.granted) {
     throw new Error(
       "Permití las notificaciones de Expo Go desde los ajustes del teléfono.",
     );
+  }
+
   return Notifications.scheduleNotificationAsync({
     content: {
       title: "Recordatorio de compras",
@@ -37,6 +49,7 @@ export async function scheduleShoppingReminder(pending: number) {
     },
   });
 }
+
 export async function cancelReminder(id: string) {
   await Notifications.cancelScheduledNotificationAsync(id);
 }
