@@ -11,6 +11,7 @@ type Props = {
   onDelete: () => void;
   disabled?: boolean;
 };
+
 export default function ProductItem({
   product,
   onOpen,
@@ -40,8 +41,11 @@ export default function ProductItem({
         style={styles.description}
       >
         {product.photo && (
-          <Image source={{ uri: photoUri(product.photo) }} style={styles.thumbnail}
-            accessibilityLabel={"Foto de " + product.name} />
+          <Image
+            source={{ uri: photoUri(product.photo) }}
+            style={styles.thumbnail}
+            accessibilityLabel={"Foto de " + product.name}
+          />
         )}
         <View>
           <Text style={[styles.name, product.bought && styles.bought]}>
@@ -62,6 +66,7 @@ export default function ProductItem({
     </View>
   );
 }
+
 const styles = StyleSheet.create({
   card: {
     flexDirection: "row",

@@ -1,0 +1,21 @@
+# Pautas de desarrollo
+
+- Mantener un estilo sencillo, legible y consistente con los ejemplos del profesor.
+- Escribir una instrucción por línea y separar las declaraciones de variables.
+- Todas las funciones deben tener cuerpo en bloque y varias líneas.
+- Las funciones flecha deben usar llaves y return explícito cuando devuelvan un valor.
+- Usar llaves en if, else, ciclos y callbacks. El contenido empieza en la línea siguiente y la llave de cierre ocupa su propia línea.
+- Indentar JSX con claridad y escribir las props en varias líneas cuando haya varias.
+- Separar con líneas en blanco los bloques de lógica que realizan tareas distintas.
+- Usar nombres claros y sencillos. Conservar los existentes salvo que dificulten entender el código.
+- No agregar abstracciones innecesarias.
+- No agregar comentarios de código de ningún tipo. Eliminar los explicativos; conservar solo directivas necesarias para herramientas y avisos de licencia.
+- Mantener la documentación de uso y entrega en README.md.
+- Aplicar estas reglas a la aplicación, tests y configuración escrita a mano. Excluir archivos generados, package-lock.json y dependencias.
+- Ejecutar npm run format y npm run lint. El formato aplica primero Prettier y después ESLint para conservar incluso las llaves multilínea de bloques vacíos.
+- Conservar comportamiento, interfaces, claves y formatos existentes de AsyncStorage.
+- Consumir Zustand mediante selectores individuales.
+- Verificar cada etapa con tests y TypeScript.
+- Agrupar o separar cambios funcionales y refactors según lo indicado por el usuario, sin descartar trabajo. Los cambios pendientes de ubicación y legibilidad se incluirán en un único commit después de la aprobación de las pruebas manuales, conservando el commit de fotos 911379b y el historial existente.
+- Crear commits locales solo después de la aprobación del usuario. Usar [TIPO] descripción en inglés, con el tipo en mayúsculas.
+- No hacer push sin una solicitud explícita.

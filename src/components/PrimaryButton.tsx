@@ -2,6 +2,7 @@ import React from "react";
 import { TouchableOpacity, Text, StyleSheet } from "react-native";
 import { colors } from "../theme";
 type Props = { title: string; onPress: () => void; disabled?: boolean };
+
 export default function PrimaryButton({
   title,
   onPress,
@@ -19,6 +20,7 @@ export default function PrimaryButton({
     </TouchableOpacity>
   );
 }
+
 const styles = StyleSheet.create({
   button: {
     backgroundColor: colors.green,

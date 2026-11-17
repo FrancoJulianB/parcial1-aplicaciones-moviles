@@ -56,3 +56,28 @@ Jest y React Native Testing Library verifican el renderizado e interacciones del
 ## Video demo
 
 https://youtube.com/shorts/_2fgLfN9sKk
+
+## Ubicación del comercio
+
+La ubicación es opcional y se puede asociar desde el alta o el detalle del producto.
+
+- Tocá Usar ubicación actual para solicitar permiso de ubicación en primer plano y obtener las coordenadas GPS.
+- También podés escribir un nombre o dirección y tocar Usar comercio manual. Este dato se muestra como ingresado manualmente y reemplaza las coordenadas si existían.
+- Desde el detalle podés actualizar o quitar la ubicación. Los productos anteriores sin ubicación siguen funcionando.
+- Si el permiso está denegado o la localización no está disponible, podés ingresar el comercio manualmente o reintentar. Si el permiso está bloqueado, el botón de Ajustes permite habilitarlo.
+- En Expo Go, los permisos se administran para Expo Go en los ajustes del iPhone. La app no solicita ubicación en segundo plano.
+
+Los datos se conservan por usuario con las mismas claves de AsyncStorage. No se utilizan mapas, servicios externos ni claves API.
+
+## Estilo y verificación
+
+Las convenciones de desarrollo están en AGENTS.md. Para aplicar el formato a la aplicación, tests y configuración escrita a mano, y comprobarlo:
+
+```bash
+npm run format
+npm run lint
+npm test
+npm run typecheck
+```
+
+Prettier ordena la indentación y JSX; ESLint exige llaves, cuerpos de función en bloque, retornos explícitos en funciones flecha, declaraciones separadas y una instrucción por línea. El comando de formato termina con ESLint para conservar las llaves multilínea también en bloques vacíos. Se excluyen dependencias, archivos generados y package-lock.json del formateo.

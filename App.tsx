@@ -11,9 +11,14 @@ import RegisterScreen from "./src/screens/RegisterScreen";
 import HomeScreen from "./src/screens/HomeScreen";
 import AddProductScreen from "./src/screens/AddProductScreen";
 import ProductDetailScreen from "./src/screens/ProductDetailScreen";
+
 const Stack = createNativeStackNavigator<RootStackParamList>();
+
 function Navigation() {
-  const username = useAppStore((state) => state.username);
+  const username = useAppStore((state) => {
+    return state.username;
+  });
+
   return (
     <NavigationContainer>
       <Stack.Navigator
@@ -60,6 +65,7 @@ function Navigation() {
     </NavigationContainer>
   );
 }
+
 export default function App() {
   return (
     <SafeAreaProvider>

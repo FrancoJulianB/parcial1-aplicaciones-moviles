@@ -20,6 +20,7 @@ test("registra un usuario, valida su contraseña y rechaza duplicados", async ()
 });
 test("recupera productos guardados y mantiene las listas separadas", async () => {
   const products = [{ id: "1", name: "Arroz", quantity: 1, bought: false }];
+
   await saveProducts("franco", products);
   await expect(loadProducts("franco")).resolves.toEqual(products);
   await expect(loadProducts("abi")).resolves.toEqual([]);
