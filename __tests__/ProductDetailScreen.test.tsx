@@ -6,6 +6,7 @@ import { pickPhoto } from "../src/services/imagePicker";
 
 const mockSetPhoto = jest.fn();
 const mockSetLocation = jest.fn();
+const mockSetContact = jest.fn();
 const mockProduct = {
   id: "1",
   name: "Pan",
@@ -22,6 +23,7 @@ jest.mock("../src/store/useAppStore", () => {
         busy: false,
         setProductPhoto: mockSetPhoto,
         setProductLocation: mockSetLocation,
+        setProductContact: mockSetContact,
       });
     },
   };
@@ -122,5 +124,22 @@ test("el detalle actualiza el comercio mediante la acción del store", async () 
   expect(mockSetLocation).toHaveBeenCalledWith("1", {
     source: "manual",
     address: "Tienda",
+  });
+});
+
+jest.mock("../src/services/contacts", () => {
+  return { loadPhoneContacts: jest.fn() };
+});
+
+test("el detalle asocia un contacto mediante la acción del store", async () => {
+  const view = screen();
+
+  fireEvent.changeText(view.getByLabelText("Nombre del contacto"), "Ana");
+  await act(async () => {
+    fireEvent.press(view.getByText("Usar contacto manual"));
+  });
+  expect(mockSetContact).toHaveBeenCalledWith("1", {
+    source: "manual",
+    name: "Ana",
   });
 });

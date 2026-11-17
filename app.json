@@ -31,6 +31,12 @@
           "isAndroidBackgroundLocationEnabled": false,
           "isAndroidForegroundServiceEnabled": false
         }
+      ],
+      [
+        "expo-contacts",
+        {
+          "contactsPermission": "Permití acceder a tus contactos para asociar uno al producto."
+        }
       ]
     ]
   }

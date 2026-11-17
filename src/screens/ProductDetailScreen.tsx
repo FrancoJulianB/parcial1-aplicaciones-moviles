@@ -17,6 +17,7 @@ import { colors, common } from "../theme";
 import PrimaryButton from "../components/PrimaryButton";
 
 import LocationField from "../components/LocationField";
+import ContactField from "../components/ContactField";
 
 export default function ProductDetailScreen({
   route,
@@ -39,10 +40,14 @@ export default function ProductDetailScreen({
     return state.setProductLocation;
   });
   const [locating, setLocating] = useState(false);
+  const setProductContact = useAppStore((state) => {
+    return state.setProductContact;
+  });
+  const [contactWorking, setContactWorking] = useState(false);
   const locked = useRef(false);
 
   async function choose(source: PhotoSource) {
-    if (locked.current || busy || locating) {
+    if (locked.current || busy || locating || contactWorking) {
       return;
     }
 
@@ -84,7 +89,7 @@ export default function ProductDetailScreen({
   }
 
   async function remove() {
-    if (locked.current || busy || locating) {
+    if (locked.current || busy || locating || contactWorking) {
       return;
     }
 
@@ -142,21 +147,21 @@ export default function ProductDetailScreen({
           onPress={() => {
             return choose("camera");
           }}
-          disabled={busy || working || locating}
+          disabled={busy || working || locating || contactWorking}
         />
         <PrimaryButton
           title="Elegir de la galería"
           onPress={() => {
             return choose("library");
           }}
-          disabled={busy || working || locating}
+          disabled={busy || working || locating || contactWorking}
         />
         {product.photo && (
           <Button
             title="Quitar foto"
             color={colors.red}
             onPress={remove}
-            disabled={busy || working || locating}
+            disabled={busy || working || locating || contactWorking}
           />
         )}
         {!!message && (
@@ -183,10 +188,18 @@ export default function ProductDetailScreen({
         )}
         <LocationField
           value={product.location}
-          disabled={busy || working}
+          disabled={busy || working || contactWorking}
           onWorking={setLocating}
           onChange={(location) => {
             return setProductLocation(product.id, location);
+          }}
+        />
+        <ContactField
+          value={product.contact}
+          onWorking={setContactWorking}
+          disabled={busy || working || locating}
+          onChange={(contact) => {
+            return setProductContact(product.id, contact);
           }}
         />
       </ScrollView>

@@ -11,7 +11,7 @@ import {
   ScrollView,
 } from "react-native";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
-import { RootStackParamList, ShopLocation } from "../types";
+import { RootStackParamList, ShopLocation, ProductContact } from "../types";
 import { useAppStore } from "../store/useAppStore";
 import { common, colors } from "../theme";
 import PrimaryButton from "../components/PrimaryButton";
@@ -19,6 +19,7 @@ import { validateProduct } from "../utils/validators";
 import { pickPhoto, PhotoSource } from "../services/imagePicker";
 
 import LocationField from "../components/LocationField";
+import ContactField from "../components/ContactField";
 
 export default function AddProductScreen({
   navigation,
@@ -38,10 +39,12 @@ export default function AddProductScreen({
   const [settings, setSettings] = useState(false);
   const [location, setLocation] = useState<ShopLocation>();
   const [locating, setLocating] = useState(false);
+  const [contact, setContact] = useState<ProductContact>();
+  const [contactWorking, setContactWorking] = useState(false);
   const locked = useRef(false);
 
   async function choose(source: PhotoSource) {
-    if (locked.current || busy || locating) {
+    if (locked.current || busy || locating || contactWorking) {
       return;
     }
 
@@ -82,7 +85,7 @@ export default function AddProductScreen({
   }
 
   async function submit() {
-    if (locked.current || busy || locating) {
+    if (locked.current || busy || locating || contactWorking) {
       return;
     }
 
@@ -98,7 +101,7 @@ export default function AddProductScreen({
     locked.current = true;
 
     try {
-      await addProduct(name, Number(quantity), photo, location);
+      await addProduct(name, Number(quantity), photo, location, contact);
       navigation.goBack();
     } catch {
       setError("No se pudo guardar el producto. Intentá nuevamente.");
@@ -130,7 +133,7 @@ export default function AddProductScreen({
             maxLength={80}
             value={name}
             onChangeText={setName}
-            editable={!busy && !working && !locating}
+            editable={!busy && !working && !locating && !contactWorking}
           />
         </View>
         <View>
@@ -142,7 +145,7 @@ export default function AddProductScreen({
             maxLength={3}
             value={quantity}
             onChangeText={setQuantity}
-            editable={!busy && !working && !locating}
+            editable={!busy && !working && !locating && !contactWorking}
           />
         </View>
         <Text style={common.label}>Foto (opcional)</Text>
@@ -164,20 +167,20 @@ export default function AddProductScreen({
           onPress={() => {
             return choose("camera");
           }}
-          disabled={busy || working || locating}
+          disabled={busy || working || locating || contactWorking}
         />
         <PrimaryButton
           title="Elegir de la galería"
           onPress={() => {
             return choose("library");
           }}
-          disabled={busy || working || locating}
+          disabled={busy || working || locating || contactWorking}
         />
         {photo && (
           <Button
             title="Quitar foto"
             color={colors.red}
-            disabled={busy || working || locating}
+            disabled={busy || working || locating || contactWorking}
             onPress={() => {
               setPhoto(undefined);
               setMessage("");
@@ -197,7 +200,7 @@ export default function AddProductScreen({
           <Button
             title="Abrir Ajustes"
             color={colors.green}
-            disabled={busy || working || locating}
+            disabled={busy || working || locating || contactWorking}
             onPress={() => {
               return Linking.openSettings().catch(() => {
                 return setMessage(
@@ -211,7 +214,13 @@ export default function AddProductScreen({
           value={location}
           onChange={setLocation}
           onWorking={setLocating}
-          disabled={busy || working}
+          disabled={busy || working || contactWorking}
+        />
+        <ContactField
+          value={contact}
+          onChange={setContact}
+          onWorking={setContactWorking}
+          disabled={busy || working || locating}
         />
         {!!error && (
           <Text
@@ -224,7 +233,7 @@ export default function AddProductScreen({
         <PrimaryButton
           title={busy ? "Guardando…" : "Guardar producto"}
           onPress={submit}
-          disabled={busy || working || locating}
+          disabled={busy || working || locating || contactWorking}
         />
       </ScrollView>
     </KeyboardAvoidingView>

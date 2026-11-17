@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { Product, ShopLocation } from "../types";
+import { Product, ProductContact, ShopLocation } from "../types";
 import * as storage from "../services/storage";
 import {
   cancelReminder,
@@ -19,6 +19,7 @@ type AppState = {
     quantity: number,
     photoUri?: string,
     location?: ShopLocation,
+    contact?: ProductContact,
   ) => Promise<void>;
   toggleProduct: (id: string) => Promise<void>;
   deleteProduct: (id: string) => Promise<void>;
@@ -26,6 +27,10 @@ type AppState = {
   setProductLocation: (
     id: string,
     location: ShopLocation | undefined,
+  ) => Promise<void>;
+  setProductContact: (
+    id: string,
+    contact: ProductContact | undefined,
   ) => Promise<void>;
   remind: () => Promise<void>;
 };
@@ -93,7 +98,7 @@ export const useAppStore = create<AppState>((set, get) => {
         set({ username: null, products: [] });
       });
     },
-    addProduct: (name, quantity, uri, location) => {
+    addProduct: (name, quantity, uri, location, contact) => {
       return exclusive(async () => {
         if (!get().username) {
           throw new Error("Iniciá sesión primero.");
@@ -107,6 +112,7 @@ export const useAppStore = create<AppState>((set, get) => {
           bought: false,
           ...(photo ? { photo } : {}),
           ...(location ? { location } : {}),
+          ...(contact ? { contact } : {}),
         };
 
         try {
@@ -210,6 +216,26 @@ export const useAppStore = create<AppState>((set, get) => {
         await commit(
           get().products.map((p) => {
             return p.id === id ? updated : p;
+          }),
+        );
+      });
+    },
+    setProductContact: (id, contact) => {
+      return exclusive(async () => {
+        const product = get().products.find((item) => {
+          return item.id === id;
+        });
+
+        if (!product) {
+          throw new Error("El producto ya no está disponible.");
+        }
+
+        const { contact: previous, ...rest } = product;
+        const updated = contact ? { ...rest, contact } : rest;
+
+        await commit(
+          get().products.map((item) => {
+            return item.id === id ? updated : item;
           }),
         );
       });

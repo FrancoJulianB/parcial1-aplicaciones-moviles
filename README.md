@@ -69,6 +69,14 @@ La ubicación es opcional y se puede asociar desde el alta o el detalle del prod
 
 Los datos se conservan por usuario con las mismas claves de AsyncStorage. No se utilizan mapas, servicios externos ni claves API.
 
+## Contacto asociado al producto
+
+El contacto es opcional y se puede asociar desde el alta o el detalle. Tocá Elegir contacto del teléfono para solicitar acceso a los contactos y buscar por nombre, teléfono o email. Con acceso limitado en iOS solo se muestran los contactos autorizados.
+
+Se conserva el nombre y, cuando existen, el primer teléfono y email disponibles. La agenda se usa temporalmente en el selector y no se guarda en AsyncStorage. El contacto elegido queda como una copia de esos datos, sin modificar la agenda del teléfono.
+
+Podés reemplazar o quitar la asociación. Cancelar la selección conserva el contacto anterior. Si se deniega el permiso o no hay contactos, completá el nombre manualmente y, si querés, teléfono o email, y tocá Usar contacto manual. Si el permiso está bloqueado, se ofrece acceso a Ajustes. En Expo Go, los permisos se administran para Expo Go en los ajustes del iPhone.
+
 ## Estilo y verificación
 
 Las convenciones de desarrollo están en AGENTS.md. Para aplicar el formato a la aplicación, tests y configuración escrita a mano, y comprobarlo:

@@ -38,7 +38,13 @@ test("permite guardar sin foto", async () => {
   await act(async () => {
     fireEvent.press(view.getByText("Guardar producto"));
   });
-  expect(mockAddProduct).toHaveBeenCalledWith("Pan", 1, undefined, undefined);
+  expect(mockAddProduct).toHaveBeenCalledWith(
+    "Pan",
+    1,
+    undefined,
+    undefined,
+    undefined,
+  );
   expect(mockGoBack).toHaveBeenCalledTimes(1);
 });
 
@@ -62,7 +68,13 @@ test("selecciona una foto, conserva la selección al cancelar y la envía al gua
   await act(async () => {
     fireEvent.press(view.getByText("Guardar producto"));
   });
-  expect(mockAddProduct).toHaveBeenCalledWith("Pan", 1, "cache.jpg", undefined);
+  expect(mockAddProduct).toHaveBeenCalledWith(
+    "Pan",
+    1,
+    "cache.jpg",
+    undefined,
+    undefined,
+  );
 });
 
 test("permite reemplazar y quitar la foto antes de crear el producto", async () => {
@@ -86,7 +98,13 @@ test("permite reemplazar y quitar la foto antes de crear el producto", async () 
   await act(async () => {
     fireEvent.press(view.getByText("Guardar producto"));
   });
-  expect(mockAddProduct).toHaveBeenCalledWith("Pan", 1, undefined, undefined);
+  expect(mockAddProduct).toHaveBeenCalledWith(
+    "Pan",
+    1,
+    undefined,
+    undefined,
+    undefined,
+  );
 });
 
 test("un error conserva los campos y la imagen para reintentar sin salir", async () => {
@@ -159,8 +177,37 @@ test("envía el comercio manual junto al producto en el alta", async () => {
   await act(async () => {
     fireEvent.press(view.getByText("Guardar producto"));
   });
-  expect(mockAddProduct).toHaveBeenCalledWith("Pan", 1, undefined, {
+  expect(mockAddProduct).toHaveBeenCalledWith(
+    "Pan",
+    1,
+    undefined,
+    {
+      source: "manual",
+      address: "Almacén",
+    },
+    undefined,
+  );
+});
+
+jest.mock("../src/services/contacts", () => {
+  return { loadPhoneContacts: jest.fn() };
+});
+
+test("envía el contacto manual junto con el producto al guardar", async () => {
+  const view = screen();
+
+  fireEvent.changeText(view.getByLabelText("Nombre del contacto"), "Ana");
+  fireEvent.changeText(view.getByLabelText("Teléfono del contacto"), "123");
+  await act(async () => {
+    fireEvent.press(view.getByText("Usar contacto manual"));
+  });
+  expect(mockAddProduct).not.toHaveBeenCalled();
+  await act(async () => {
+    fireEvent.press(view.getByText("Guardar producto"));
+  });
+  expect(mockAddProduct).toHaveBeenCalledWith("Pan", 1, undefined, undefined, {
     source: "manual",
-    address: "Almacén",
+    name: "Ana",
+    phone: "123",
   });
 });

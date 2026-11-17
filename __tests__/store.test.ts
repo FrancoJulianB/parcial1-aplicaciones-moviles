@@ -334,3 +334,128 @@ test("un error al guardar ubicación conserva el estado y no altera otro usuario
   await useAppStore.getState().login("abi", "abcdef");
   expect(useAppStore.getState().products).toEqual([]);
 });
+
+test("crea con contacto del teléfono y recupera solo sus datos al iniciar sesión", async () => {
+  await useAppStore.getState().login("franco", "123456");
+
+  const contact = {
+    source: "phone" as const,
+    name: "Ana",
+    phone: "123",
+    email: "ana@example.com",
+  };
+
+  await useAppStore
+    .getState()
+    .addProduct("Pan", 1, undefined, undefined, contact);
+  await useAppStore.getState().logout();
+  await useAppStore.getState().login("franco", "123456");
+
+  expect(useAppStore.getState().products[1].contact).toEqual(contact);
+  expect(useAppStore.getState().products[0].contact).toBeUndefined();
+
+  await useAppStore.getState().logout();
+  await useAppStore.getState().login("abi", "abcdef");
+
+  expect(useAppStore.getState().products).toEqual([]);
+});
+
+test("reemplaza y quita el contacto sin alterar foto, ubicación u otros productos", async () => {
+  await useAppStore.getState().login("franco", "123456");
+  await useAppStore.getState().setProductPhoto("1", "file:///cache/photo.jpg");
+  await useAppStore
+    .getState()
+    .setProductLocation("1", { source: "manual", address: "Almacén" });
+  await useAppStore.getState().addProduct("Pan", 1);
+  await useAppStore
+    .getState()
+    .setProductContact("1", { source: "phone", name: "Ana", phone: "123" });
+  await useAppStore
+    .getState()
+    .setProductContact("1", { source: "manual", name: "Luis" });
+  await useAppStore.getState().logout();
+  await useAppStore.getState().login("franco", "123456");
+
+  expect(useAppStore.getState().products[0]).toMatchObject({
+    photo: "new.jpg",
+    location: { source: "manual", address: "Almacén" },
+    contact: { source: "manual", name: "Luis" },
+  });
+  expect(useAppStore.getState().products[0].contact?.phone).toBeUndefined();
+  expect(useAppStore.getState().products[1].contact).toBeUndefined();
+
+  await useAppStore.getState().setProductContact("1", undefined);
+
+  const saved = JSON.parse(
+    (await AsyncStorage.getItem("@compras:productos:franco"))!,
+  );
+
+  expect(saved[0].contact).toBeUndefined();
+  expect(saved[0].photo).toBe("new.jpg");
+  expect(saved[0].location).toEqual({ source: "manual", address: "Almacén" });
+});
+
+test.each(["replace", "remove"] as const)(
+  "un error al guardar contacto con %s conserva el anterior",
+  async (operation) => {
+    await useAppStore.getState().login("franco", "123456");
+    await useAppStore
+      .getState()
+      .setProductContact("1", { source: "manual", name: "Anterior" });
+
+    const previous = useAppStore.getState().products;
+
+    jest
+      .spyOn(AsyncStorage, "setItem")
+      .mockRejectedValueOnce(new Error("Sin espacio"));
+    await expect(
+      useAppStore
+        .getState()
+        .setProductContact(
+          "1",
+          operation === "remove"
+            ? undefined
+            : { source: "manual", name: "Nuevo" },
+        ),
+    ).rejects.toThrow("Sin espacio");
+    expect(useAppStore.getState().products).toBe(previous);
+    expect(useAppStore.getState().busy).toBe(false);
+
+    const saved = JSON.parse(
+      (await AsyncStorage.getItem("@compras:productos:franco"))!,
+    );
+
+    expect(saved[0].contact).toEqual({ source: "manual", name: "Anterior" });
+  },
+);
+
+test("un error al crear con contacto no agrega el producto en memoria", async () => {
+  await useAppStore.getState().login("franco", "123456");
+
+  const previous = useAppStore.getState().products;
+
+  jest
+    .spyOn(AsyncStorage, "setItem")
+    .mockRejectedValueOnce(new Error("Sin espacio"));
+  await expect(
+    useAppStore
+      .getState()
+      .addProduct("Pan", 1, undefined, undefined, {
+        source: "manual",
+        name: "Ana",
+      }),
+  ).rejects.toThrow("Sin espacio");
+  expect(useAppStore.getState().products).toBe(previous);
+  expect(useAppStore.getState().busy).toBe(false);
+});
+
+test("no asocia un contacto a un producto inexistente", async () => {
+  await useAppStore.getState().login("franco", "123456");
+
+  await expect(
+    useAppStore
+      .getState()
+      .setProductContact("missing", { source: "manual", name: "Ana" }),
+  ).rejects.toThrow("El producto ya no está disponible.");
+  expect(useAppStore.getState().products).toEqual(products);
+});
