@@ -1,0 +1,10 @@
+
+> lista-compras-parcial@1.0.0 test
+> jest --runInBand --watch=false --no-cache
+
+
+Test Suites: 14 passed, 14 total
+Tests:       100 passed, 100 total
+Snapshots:   0 total
+Time:        13.223 s
+Ran all test suites.
