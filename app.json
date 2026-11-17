@@ -13,7 +13,8 @@
       "package": "com.francobarrera.listacompras"
     },
     "plugins": [
-      "expo-notifications"
+      "expo-notifications",
+      "expo-status-bar"
     ]
   }
 }

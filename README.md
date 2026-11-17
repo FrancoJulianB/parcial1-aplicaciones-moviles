@@ -6,7 +6,7 @@ Aplicación móvil realizada con React Native, Expo y TypeScript. Permite organi
 
 ## Ejecución
 
-Requiere Node.js LTS y Expo Go compatible con SDK 57 en un teléfono. Desde la carpeta del proyecto:
+Requiere Node.js 22.13 o posterior de la rama 22, 24.3 o posterior de la rama 24, o 26 o posterior, y Expo Go compatible con SDK 58 en un teléfono. Desde la carpeta del proyecto:
 
 ```bash
 npm install
