@@ -84,6 +84,7 @@ export default function HomeScreen({
             disabled={busy}
             onToggle={() => perform(() => toggleProduct(item.id))}
             onDelete={() => remove(item.id)}
+            onOpen={() => navigation.navigate("Detalle", { id: item.id })}
           />
         )}
         ListEmptyComponent={

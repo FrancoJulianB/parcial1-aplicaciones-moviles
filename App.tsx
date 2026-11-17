@@ -10,6 +10,7 @@ import LoginScreen from "./src/screens/LoginScreen";
 import RegisterScreen from "./src/screens/RegisterScreen";
 import HomeScreen from "./src/screens/HomeScreen";
 import AddProductScreen from "./src/screens/AddProductScreen";
+import ProductDetailScreen from "./src/screens/ProductDetailScreen";
 const Stack = createNativeStackNavigator<RootStackParamList>();
 function Navigation() {
   const username = useAppStore((state) => state.username);
@@ -34,6 +35,11 @@ function Navigation() {
               name="Alta"
               component={AddProductScreen}
               options={{ title: "Nuevo producto" }}
+            />
+            <Stack.Screen
+              name="Detalle"
+              component={ProductDetailScreen}
+              options={{ title: "Detalle del producto" }}
             />
           </Stack.Group>
         ) : (

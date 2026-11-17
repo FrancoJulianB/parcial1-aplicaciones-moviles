@@ -1,15 +1,19 @@
 import React from "react";
-import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import { View, Image, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { Product } from "../types";
 import { colors } from "../theme";
+import { photoUri } from "../services/photos";
+
 type Props = {
   product: Product;
+  onOpen: () => void;
   onToggle: () => void;
   onDelete: () => void;
   disabled?: boolean;
 };
 export default function ProductItem({
   product,
+  onOpen,
   onToggle,
   onDelete,
   disabled,
@@ -27,7 +31,19 @@ export default function ProductItem({
         <View style={[styles.check, product.bought && styles.checked]}>
           <Text style={styles.checkText}>{product.bought ? "✓" : ""}</Text>
         </View>
-        <View style={styles.description}>
+      </TouchableOpacity>
+      <TouchableOpacity
+        disabled={disabled}
+        accessibilityRole="button"
+        accessibilityLabel={"Ver detalle de " + product.name}
+        onPress={onOpen}
+        style={styles.description}
+      >
+        {product.photo && (
+          <Image source={{ uri: photoUri(product.photo) }} style={styles.thumbnail}
+            accessibilityLabel={"Foto de " + product.name} />
+        )}
+        <View>
           <Text style={[styles.name, product.bought && styles.bought]}>
             {product.name}
           </Text>
@@ -57,7 +73,7 @@ const styles = StyleSheet.create({
     padding: 14,
     marginBottom: 12,
   },
-  toggle: { flexDirection: "row", flex: 1, alignItems: "center", gap: 12 },
+  toggle: { padding: 8, marginRight: 4 },
   check: {
     width: 26,
     height: 26,
@@ -69,7 +85,8 @@ const styles = StyleSheet.create({
   },
   checked: { backgroundColor: colors.green },
   checkText: { color: colors.white, fontWeight: "700" },
-  description: { flex: 1 },
+  description: { flex: 1, gap: 8 },
+  thumbnail: { width: 56, height: 56, borderRadius: 8 },
   name: { color: colors.ink, fontSize: 17, fontWeight: "600" },
   bought: { textDecorationLine: "line-through", color: colors.muted },
   quantity: { color: colors.muted, fontSize: 13, marginTop: 4 },

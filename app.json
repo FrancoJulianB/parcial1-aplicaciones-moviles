@@ -14,7 +14,15 @@
     },
     "plugins": [
       "expo-notifications",
-      "expo-status-bar"
+      "expo-status-bar",
+      [
+        "expo-image-picker",
+        {
+          "cameraPermission": "Permití usar la cámara para fotografiar tus productos.",
+          "photosPermission": "Permití acceder a tus fotos para elegir una imagen del producto.",
+          "microphonePermission": false
+        }
+      ]
     ]
   }
 }

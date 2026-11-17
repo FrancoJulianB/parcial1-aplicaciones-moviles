@@ -129,3 +129,91 @@ test("no programa recordatorios sin productos pendientes", async () => {
   );
   expect(scheduleShoppingReminder).not.toHaveBeenCalled();
 });
+
+jest.mock("../src/services/photos", () => ({
+  savePhoto: jest.fn().mockReturnValue("new.jpg"),
+  removePhoto: jest.fn(),
+}));
+
+test("persiste la foto y la recupera al volver a ingresar", async () => {
+  await useAppStore.getState().login("franco", "123456");
+  await useAppStore.getState().setProductPhoto("1", "file:///cache/image.jpg");
+  await useAppStore.getState().logout();
+  await useAppStore.getState().login("franco", "123456");
+  expect(useAppStore.getState().products[0].photo).toBe("new.jpg");
+  await useAppStore.getState().setProductPhoto("1", null);
+  expect(useAppStore.getState().products[0].photo).toBeUndefined();
+  expect(require("../src/services/photos").removePhoto).toHaveBeenCalledWith("new.jpg");
+});
+
+test("un error al reemplazar la foto conserva la anterior y borra la copia nueva", async () => {
+  const photos = require("../src/services/photos");
+  await useAppStore.getState().login("franco", "123456");
+  await useAppStore.getState().setProductPhoto("1", "file:///cache/first.jpg");
+  photos.savePhoto.mockReturnValueOnce("replacement.jpg");
+  photos.removePhoto.mockClear();
+  jest.spyOn(AsyncStorage, "setItem").mockRejectedValueOnce(new Error("Sin espacio"));
+  await expect(useAppStore.getState().setProductPhoto("1", "file:///cache/second.jpg"))
+    .rejects.toThrow("Sin espacio");
+  expect(useAppStore.getState().products[0].photo).toBe("new.jpg");
+  expect(photos.removePhoto).toHaveBeenCalledWith("replacement.jpg");
+  expect(photos.removePhoto).not.toHaveBeenCalledWith("new.jpg");
+});
+
+test("un error al copiar no modifica la lista ni elimina la foto anterior", async () => {
+  const photos = require("../src/services/photos");
+  await useAppStore.getState().login("franco", "123456");
+  const previous = useAppStore.getState().products;
+  photos.savePhoto.mockImplementationOnce(() => { throw new Error("Error de copia"); });
+  await expect(useAppStore.getState().setProductPhoto("1", "file:///cache/photo.jpg"))
+    .rejects.toThrow("Error de copia");
+  expect(useAppStore.getState().products).toBe(previous);
+  expect(useAppStore.getState().busy).toBe(false);
+});
+
+test("elimina el archivo solo después de guardar la eliminación del producto", async () => {
+  const photos = require("../src/services/photos");
+  await useAppStore.getState().login("franco", "123456");
+  await useAppStore.getState().setProductPhoto("1", "file:///cache/photo.jpg");
+  photos.removePhoto.mockClear();
+  jest.spyOn(AsyncStorage, "setItem").mockRejectedValueOnce(new Error("Sin espacio"));
+  await expect(useAppStore.getState().deleteProduct("1")).rejects.toThrow();
+  expect(photos.removePhoto).not.toHaveBeenCalled();
+  await useAppStore.getState().deleteProduct("1");
+  expect(photos.removePhoto).toHaveBeenCalledWith("new.jpg");
+});
+
+test("crea el producto con foto persistente y la recupera al iniciar sesión", async () => {
+  const photos = require("../src/services/photos");
+  await useAppStore.getState().login("franco", "123456");
+  await useAppStore.getState().addProduct(" Pan ", 2, "file:///cache/pan.jpg");
+  expect(photos.savePhoto).toHaveBeenCalledWith("file:///cache/pan.jpg");
+  await useAppStore.getState().logout();
+  await useAppStore.getState().login("franco", "123456");
+  expect(useAppStore.getState().products[1]).toMatchObject({
+    name: "Pan", quantity: 2, bought: false, photo: "new.jpg",
+  });
+});
+
+test("si falla el alta con foto elimina la copia y no agrega el producto", async () => {
+  const photos = require("../src/services/photos");
+  await useAppStore.getState().login("franco", "123456");
+  const previous = useAppStore.getState().products;
+  jest.spyOn(AsyncStorage, "setItem").mockRejectedValueOnce(new Error("Sin espacio"));
+  await expect(useAppStore.getState().addProduct("Pan", 1, "file:///cache/pan.jpg"))
+    .rejects.toThrow("Sin espacio");
+  expect(useAppStore.getState().products).toBe(previous);
+  expect(photos.removePhoto).toHaveBeenCalledWith("new.jpg");
+  expect(useAppStore.getState().busy).toBe(false);
+});
+
+test("si falla la copia durante el alta no se crea el producto", async () => {
+  const photos = require("../src/services/photos");
+  await useAppStore.getState().login("franco", "123456");
+  const previous = useAppStore.getState().products;
+  photos.savePhoto.mockImplementationOnce(() => { throw new Error("Error de copia"); });
+  await expect(useAppStore.getState().addProduct("Pan", 1, "file:///cache/pan.jpg"))
+    .rejects.toThrow("Error de copia");
+  expect(useAppStore.getState().products).toBe(previous);
+  expect(useAppStore.getState().busy).toBe(false);
+});
