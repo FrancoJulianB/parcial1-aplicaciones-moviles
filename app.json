@@ -37,6 +37,13 @@
         {
           "contactsPermission": "Permití acceder a tus contactos para asociar uno al producto."
         }
+      ],
+      [
+        "expo-calendar",
+        {
+          "calendarPermission": "Permití acceder a tus calendarios para elegir dónde recordar la compra.",
+          "writeOnlyAccess": false
+        }
       ]
     ]
   }

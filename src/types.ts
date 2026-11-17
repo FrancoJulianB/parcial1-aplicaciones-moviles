@@ -9,6 +9,14 @@ export type ProductContact = {
   email?: string;
 };
 
+export type ProductCalendarEvent = {
+  id: string;
+  calendarId: string;
+  calendarTitle: string;
+  startDate: string;
+  createdAt: string;
+};
+
 export type Product = {
   id: string;
   name: string;
@@ -17,6 +25,7 @@ export type Product = {
   photo?: string;
   location?: ShopLocation;
   contact?: ProductContact;
+  calendarEvent?: ProductCalendarEvent;
 };
 
 export type RootStackParamList = {

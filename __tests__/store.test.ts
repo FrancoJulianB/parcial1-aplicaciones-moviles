@@ -438,12 +438,10 @@ test("un error al crear con contacto no agrega el producto en memoria", async ()
     .spyOn(AsyncStorage, "setItem")
     .mockRejectedValueOnce(new Error("Sin espacio"));
   await expect(
-    useAppStore
-      .getState()
-      .addProduct("Pan", 1, undefined, undefined, {
-        source: "manual",
-        name: "Ana",
-      }),
+    useAppStore.getState().addProduct("Pan", 1, undefined, undefined, {
+      source: "manual",
+      name: "Ana",
+    }),
   ).rejects.toThrow("Sin espacio");
   expect(useAppStore.getState().products).toBe(previous);
   expect(useAppStore.getState().busy).toBe(false);
@@ -458,4 +456,159 @@ test("no asocia un contacto a un producto inexistente", async () => {
       .setProductContact("missing", { source: "manual", name: "Ana" }),
   ).rejects.toThrow("El producto ya no está disponible.");
   expect(useAppStore.getState().products).toEqual(products);
+});
+
+jest.mock("../src/services/calendar", () => {
+  return {
+    createPurchaseEvent: jest.fn().mockResolvedValue({
+      id: "event-1",
+      calendarId: "personal",
+      calendarTitle: "Personal",
+      startDate: "2099-01-01T12:00:00.000Z",
+      createdAt: "2030-01-01T12:00:00.000Z",
+    }),
+    removePurchaseEvent: jest.fn().mockResolvedValue(undefined),
+  };
+});
+
+test("guarda la asociación del evento y la recupera sin alterar las otras funciones", async () => {
+  const calendar = require("../src/services/calendar");
+
+  await useAppStore.getState().login("franco", "123456");
+  await useAppStore.getState().remind();
+  await useAppStore
+    .getState()
+    .createProductEvent("1", "personal", "2099-01-01T12:00:00.000Z");
+
+  expect(calendar.createPurchaseEvent).toHaveBeenCalledWith(
+    products[0],
+    "personal",
+    "2099-01-01T12:00:00.000Z",
+  );
+  expect(cancelReminder).not.toHaveBeenCalled();
+  expect(scheduleShoppingReminder).toHaveBeenCalledWith(1);
+
+  await useAppStore.getState().logout();
+  await useAppStore.getState().login("franco", "123456");
+
+  expect(useAppStore.getState().products[0].calendarEvent).toMatchObject({
+    id: "event-1",
+    calendarId: "personal",
+    startDate: "2099-01-01T12:00:00.000Z",
+  });
+  await expect(
+    useAppStore
+      .getState()
+      .createProductEvent("1", "personal", "2099-01-01T12:00:00.000Z"),
+  ).rejects.toThrow("ya tiene un evento");
+  expect(calendar.createPurchaseEvent).toHaveBeenCalledTimes(1);
+
+  await useAppStore.getState().logout();
+  await useAppStore.getState().login("abi", "abcdef");
+
+  expect(useAppStore.getState().products).toEqual([]);
+});
+
+test("bloquea pulsaciones simultáneas mientras se crea el evento", async () => {
+  const calendar = require("../src/services/calendar");
+  let finish!: (value: unknown) => void;
+
+  calendar.createPurchaseEvent.mockReturnValueOnce(
+    new Promise((resolve) => {
+      finish = resolve;
+    }),
+  );
+  await useAppStore.getState().login("franco", "123456");
+
+  const creating = useAppStore
+    .getState()
+    .createProductEvent("1", "personal", "2099-01-01T12:00:00.000Z");
+
+  await expect(
+    useAppStore
+      .getState()
+      .createProductEvent("1", "personal", "2099-01-01T12:00:00.000Z"),
+  ).rejects.toThrow("operación anterior");
+  finish({
+    id: "event-1",
+    calendarId: "personal",
+    calendarTitle: "Personal",
+    startDate: "2099-01-01T12:00:00.000Z",
+    createdAt: "2030-01-01T12:00:00.000Z",
+  });
+  await creating;
+
+  expect(calendar.createPurchaseEvent).toHaveBeenCalledTimes(1);
+});
+
+test("si falla la creación conserva los productos existentes", async () => {
+  const calendar = require("../src/services/calendar");
+
+  await useAppStore.getState().login("franco", "123456");
+
+  const previous = useAppStore.getState().products;
+
+  calendar.createPurchaseEvent.mockRejectedValueOnce(new Error("Sin permiso"));
+  await expect(
+    useAppStore
+      .getState()
+      .createProductEvent("1", "personal", "2099-01-01T12:00:00.000Z"),
+  ).rejects.toThrow("Sin permiso");
+  expect(useAppStore.getState().products).toBe(previous);
+  expect(useAppStore.getState().busy).toBe(false);
+});
+
+test("si falla AsyncStorage elimina el evento nuevo y conserva los productos", async () => {
+  const calendar = require("../src/services/calendar");
+
+  await useAppStore.getState().login("franco", "123456");
+
+  const previous = useAppStore.getState().products;
+
+  jest
+    .spyOn(AsyncStorage, "setItem")
+    .mockRejectedValueOnce(new Error("Sin espacio"));
+  await expect(
+    useAppStore
+      .getState()
+      .createProductEvent("1", "personal", "2099-01-01T12:00:00.000Z"),
+  ).rejects.toThrow("Sin espacio");
+  expect(calendar.removePurchaseEvent).toHaveBeenCalledWith("event-1");
+  expect(useAppStore.getState().products).toBe(previous);
+});
+
+test("si también falla la limpieza reintenta la asociación sin duplicar el evento", async () => {
+  const calendar = require("../src/services/calendar");
+
+  await useAppStore.getState().login("franco", "123456");
+
+  const previous = useAppStore.getState().products;
+
+  calendar.removePurchaseEvent.mockRejectedValueOnce(new Error("Sin permiso"));
+  jest
+    .spyOn(AsyncStorage, "setItem")
+    .mockRejectedValueOnce(new Error("Sin espacio"));
+  await expect(
+    useAppStore
+      .getState()
+      .createProductEvent("1", "personal", "2099-01-01T12:00:00.000Z"),
+  ).rejects.toThrow("sin crear otro evento");
+  expect(useAppStore.getState().products).toBe(previous);
+  await useAppStore
+    .getState()
+    .createProductEvent("1", "personal", "2099-01-01T12:00:00.000Z");
+  expect(calendar.createPurchaseEvent).toHaveBeenCalledTimes(1);
+  expect(useAppStore.getState().products[0].calendarEvent?.id).toBe("event-1");
+});
+
+test("no crea eventos para productos inexistentes", async () => {
+  const calendar = require("../src/services/calendar");
+
+  await useAppStore.getState().login("franco", "123456");
+  await expect(
+    useAppStore
+      .getState()
+      .createProductEvent("missing", "personal", "2099-01-01T12:00:00.000Z"),
+  ).rejects.toThrow("ya no está disponible");
+  expect(calendar.createPurchaseEvent).not.toHaveBeenCalled();
 });

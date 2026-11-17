@@ -1,11 +1,17 @@
 import { create } from "zustand";
-import { Product, ProductContact, ShopLocation } from "../types";
+import {
+  Product,
+  ProductCalendarEvent,
+  ProductContact,
+  ShopLocation,
+} from "../types";
 import * as storage from "../services/storage";
 import {
   cancelReminder,
   scheduleShoppingReminder,
 } from "../services/notifications";
 import { savePhoto, removePhoto } from "../services/photos";
+import { createPurchaseEvent, removePurchaseEvent } from "../services/calendar";
 
 type AppState = {
   username: string | null;
@@ -32,11 +38,17 @@ type AppState = {
     id: string,
     contact: ProductContact | undefined,
   ) => Promise<void>;
+  createProductEvent: (
+    id: string,
+    calendarId: string,
+    startDate: string,
+  ) => Promise<void>;
   remind: () => Promise<void>;
 };
 
 export const useAppStore = create<AppState>((set, get) => {
   let reminder: string | null = null;
+  const pendingEvents = new Map<string, ProductCalendarEvent>();
 
   async function exclusive(action: () => Promise<void>) {
     if (get().busy) {
@@ -238,6 +250,56 @@ export const useAppStore = create<AppState>((set, get) => {
             return item.id === id ? updated : item;
           }),
         );
+      });
+    },
+    createProductEvent: (id, calendarId, startDate) => {
+      return exclusive(async () => {
+        const { username, products } = get();
+        const product = products.find((item) => {
+          return item.id === id;
+        });
+
+        if (!username) {
+          throw new Error("Iniciá sesión primero.");
+        }
+
+        if (!product) {
+          throw new Error("El producto ya no está disponible.");
+        }
+
+        if (product.calendarEvent) {
+          throw new Error(
+            "Este producto ya tiene un evento de calendario asociado.",
+          );
+        }
+
+        const key = JSON.stringify([username, id]);
+        const event =
+          pendingEvents.get(key) ||
+          (await createPurchaseEvent(product, calendarId, startDate));
+
+        pendingEvents.set(key, event);
+
+        const next = products.map((item) => {
+          return item.id === id ? { ...item, calendarEvent: event } : item;
+        });
+
+        try {
+          await storage.saveProducts(username, next);
+          set({ products: next });
+          pendingEvents.delete(key);
+        } catch (error) {
+          try {
+            await removePurchaseEvent(event.id);
+            pendingEvents.delete(key);
+          } catch {
+            throw new Error(
+              "El evento se creó, pero no se pudo guardar su asociación ni eliminarlo. Reintentá para guardar la asociación sin crear otro evento.",
+            );
+          }
+
+          throw error;
+        }
       });
     },
     remind: () => {

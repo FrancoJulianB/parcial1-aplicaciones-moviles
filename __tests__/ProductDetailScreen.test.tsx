@@ -3,10 +3,12 @@ import { Linking } from "react-native";
 import { render, fireEvent, waitFor, act } from "@testing-library/react-native";
 import ProductDetailScreen from "../src/screens/ProductDetailScreen";
 import { pickPhoto } from "../src/services/imagePicker";
+import { loadEditableCalendars } from "../src/services/calendar";
 
 const mockSetPhoto = jest.fn();
 const mockSetLocation = jest.fn();
 const mockSetContact = jest.fn();
+const mockCreateProductEvent = jest.fn();
 const mockProduct = {
   id: "1",
   name: "Pan",
@@ -24,6 +26,7 @@ jest.mock("../src/store/useAppStore", () => {
         setProductPhoto: mockSetPhoto,
         setProductLocation: mockSetLocation,
         setProductContact: mockSetContact,
+        createProductEvent: mockCreateProductEvent,
       });
     },
   };
@@ -142,4 +145,35 @@ test("el detalle asocia un contacto mediante la acción del store", async () => 
     source: "manual",
     name: "Ana",
   });
+});
+
+jest.mock("../src/services/calendar", () => {
+  return {
+    ...jest.requireActual("../src/services/calendar"),
+    loadEditableCalendars: jest.fn(),
+  };
+});
+
+test("el detalle permite confirmar el evento usando la acción del store", async () => {
+  (loadEditableCalendars as jest.Mock).mockResolvedValue({
+    status: "available",
+    calendars: [{ id: "personal", title: "Personal" }],
+  });
+
+  const view = screen();
+
+  await act(async () => {
+    fireEvent.press(view.getByText("Crear evento de compra"));
+  });
+  fireEvent.press(view.getByLabelText("Elegir calendario Personal"));
+  fireEvent.changeText(view.getByLabelText("Fecha de compra"), "01/01/2099");
+  fireEvent.changeText(view.getByLabelText("Hora de compra"), "12:30");
+  await act(async () => {
+    fireEvent.press(view.getByText("Confirmar evento de compra"));
+  });
+  expect(mockCreateProductEvent).toHaveBeenCalledWith(
+    "1",
+    "personal",
+    new Date(2099, 0, 1, 12, 30).toISOString(),
+  );
 });

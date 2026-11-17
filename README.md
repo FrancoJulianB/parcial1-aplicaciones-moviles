@@ -77,6 +77,28 @@ Se conserva el nombre y, cuando existen, el primer teléfono y email disponibles
 
 Podés reemplazar o quitar la asociación. Cancelar la selección conserva el contacto anterior. Si se deniega el permiso o no hay contactos, completá el nombre manualmente y, si querés, teléfono o email, y tocá Usar contacto manual. Si el permiso está bloqueado, se ofrece acceso a Ajustes. En Expo Go, los permisos se administran para Expo Go en los ajustes del iPhone.
 
+## Evento de compra en el calendario
+
+La integración con expo-calendar está implementada y tiene pruebas automatizadas de permisos, selección de calendario, validación de fecha y hora, creación del evento, persistencia y prevención de duplicados. Las pruebas utilizan mocks de las APIs nativas; no verifican la creación de eventos reales en el dispositivo.
+
+**Estado para la entrega: no se validó manualmente la creación de eventos reales en el iPhone.** En SDK 58, expo-calendar requiere una compilación de desarrollo y no está disponible en Expo Go. Al intentar usar la función en Expo Go, la app muestra un mensaje informativo y conserva el resto de sus funcionalidades. No se preparó una compilación de desarrollo para esta entrega.
+
+La implementación utiliza la API real del calendario del dispositivo. El siguiente flujo requiere una compilación de desarrollo:
+
+Desde el detalle de un producto guardado, tocá Crear evento de compra. Al utilizar la función se solicita acceso al calendario para listar los calendarios editables. No se solicitan permisos para la app Recordatorios de iOS.
+
+Elegí un calendario y escribí una fecha futura en formato DD/MM/AAAA y una hora en formato HH:MM de 24 horas, usando la hora local del teléfono. Confirmar evento de compra crea un evento real de 30 minutos con título Comprar: seguido del nombre del producto, cantidad, comercio si existe y una alerta al inicio. Cancelar antes de confirmar conserva el producto.
+
+El detalle muestra el calendario, la fecha de compra y cuándo se creó la asociación. Un producto con evento asociado no permite crear otro. La asociación se guarda por usuario con las claves existentes de AsyncStorage. El recordatorio local de diez segundos sigue disponible en la lista y es independiente del evento.
+
+Si no hay calendarios editables, agregá o habilitá uno desde la app Calendario del teléfono y reintentá. Si el permiso está bloqueado, la app ofrece acceso a Ajustes.
+
+### Requisito para validar eventos reales
+
+La validación manual de eventos reales queda pendiente hasta disponer de una compilación de desarrollo instalada en el iPhone con expo-calendar. Consultá la [documentación oficial de expo-calendar](https://docs.expo.dev/versions/v58.0.0/sdk/calendar/) y la [guía de compilaciones de desarrollo](https://docs.expo.dev/develop/development-builds/introduction/).
+
+No se agregan servicios externos ni claves API. Los eventos creados mediante la API permanecen en Calendario aunque después se elimine el producto; esta etapa no sincroniza cambios realizados fuera de la app.
+
 ## Estilo y verificación
 
 Las convenciones de desarrollo están en AGENTS.md. Para aplicar el formato a la aplicación, tests y configuración escrita a mano, y comprobarlo:
