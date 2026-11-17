@@ -10,14 +10,15 @@ import {
 } from "react-native";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { RootStackParamList } from "../types";
-import { useApp } from "../context/AppContext";
+import { useAppStore } from "../store/useAppStore";
 import { common, colors } from "../theme";
 import PrimaryButton from "../components/PrimaryButton";
 import { validateCredentials } from "../utils/validators";
 export default function RegisterScreen({
   navigation,
 }: NativeStackScreenProps<RootStackParamList, "Registro">) {
-  const { register, busy } = useApp();
+  const register = useAppStore((state) => state.register);
+  const busy = useAppStore((state) => state.busy);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");

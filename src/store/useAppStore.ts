@@ -1,11 +1,11 @@
-import React, { createContext, useContext, useRef, useState } from "react";
+import { create } from "zustand";
 import { Product } from "../types";
 import * as storage from "../services/storage";
 import {
   cancelReminder,
   scheduleShoppingReminder,
 } from "../services/notifications";
-type Context = {
+type AppState = {
   username: string | null;
   products: Product[];
   busy: boolean;
@@ -17,61 +17,53 @@ type Context = {
   deleteProduct: (id: string) => Promise<void>;
   remind: () => Promise<void>;
 };
-const AppContext = createContext<Context | null>(null);
-export function AppProvider({ children }: { children: React.ReactNode }) {
-  const [username, setUsername] = useState<string | null>(null);
-  const [products, setProducts] = useState<Product[]>([]);
-  const [busy, setBusy] = useState(false);
-  const locked = useRef(false);
-  const reminder = useRef<string | null>(null);
+export const useAppStore = create<AppState>((set, get) => {
+  let reminder: string | null = null;
   async function exclusive(action: () => Promise<void>) {
-    if (locked.current)
+    if (get().busy)
       throw new Error("Esperá a que termine la operación anterior.");
-    locked.current = true;
-    setBusy(true);
+    set({ busy: true });
     try {
       await action();
     } finally {
-      locked.current = false;
-      setBusy(false);
+      set({ busy: false });
     }
   }
   async function clearReminder() {
-    if (reminder.current) {
-      await cancelReminder(reminder.current);
-      reminder.current = null;
+    if (reminder) {
+      await cancelReminder(reminder);
+      reminder = null;
     }
   }
   async function commit(next: Product[]) {
+    const { username } = get();
     if (!username) throw new Error("Iniciá sesión primero.");
     await storage.saveProducts(username, next);
-    setProducts(next);
+    set({ products: next });
     try {
       await clearReminder();
     } catch {}
   }
-  const value: Context = {
-    username,
-    products,
-    busy,
+  return {
+    username: null,
+    products: [],
+    busy: false,
     register: (u, p) => exclusive(() => storage.registerUser(u, p)),
     login: (u, p) =>
       exclusive(async () => {
         const user = await storage.authenticateUser(u, p);
         const saved = await storage.loadProducts(user);
-        setProducts(saved);
-        setUsername(user);
+        set({ products: saved, username: user });
       }),
     logout: () =>
       exclusive(async () => {
         await clearReminder();
-        setUsername(null);
-        setProducts([]);
+        set({ username: null, products: [] });
       }),
     addProduct: (name, quantity) =>
       exclusive(() =>
         commit([
-          ...products,
+          ...get().products,
           {
             id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
             name: name.trim(),
@@ -83,26 +75,20 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     toggleProduct: (id) =>
       exclusive(() =>
         commit(
-          products.map((p) => (p.id === id ? { ...p, bought: !p.bought } : p)),
+          get().products.map((p) => (p.id === id ? { ...p, bought: !p.bought } : p)),
         ),
       ),
     deleteProduct: (id) =>
-      exclusive(() => commit(products.filter((p) => p.id !== id))),
+      exclusive(() => commit(get().products.filter((p) => p.id !== id))),
     remind: () =>
       exclusive(async () => {
-        const pending = products.filter((p) => !p.bought).length;
+        const pending = get().products.filter((p) => !p.bought).length;
         if (!pending)
           throw new Error(
             "Agregá un producto pendiente para crear un recordatorio.",
           );
         await clearReminder();
-        reminder.current = await scheduleShoppingReminder(pending);
+        reminder = await scheduleShoppingReminder(pending);
       }),
   };
-  return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
-}
-export function useApp() {
-  const value = useContext(AppContext);
-  if (!value) throw new Error("Falta AppProvider.");
-  return value;
-}
+});

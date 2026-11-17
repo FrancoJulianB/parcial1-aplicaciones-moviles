@@ -3,7 +3,7 @@ import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
-import { AppProvider, useApp } from "./src/context/AppContext";
+import { useAppStore } from "./src/store/useAppStore";
 import { RootStackParamList } from "./src/types";
 import { colors } from "./src/theme";
 import LoginScreen from "./src/screens/LoginScreen";
@@ -12,7 +12,7 @@ import HomeScreen from "./src/screens/HomeScreen";
 import AddProductScreen from "./src/screens/AddProductScreen";
 const Stack = createNativeStackNavigator<RootStackParamList>();
 function Navigation() {
-  const { username } = useApp();
+  const username = useAppStore((state) => state.username);
   return (
     <NavigationContainer>
       <Stack.Navigator
@@ -57,10 +57,8 @@ function Navigation() {
 export default function App() {
   return (
     <SafeAreaProvider>
-      <AppProvider>
-        <StatusBar style="dark" />
-        <Navigation />
-      </AppProvider>
+      <StatusBar style="dark" />
+      <Navigation />
     </SafeAreaProvider>
   );
 }

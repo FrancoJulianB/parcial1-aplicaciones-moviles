@@ -9,14 +9,15 @@ import {
 } from "react-native";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { RootStackParamList } from "../types";
-import { useApp } from "../context/AppContext";
+import { useAppStore } from "../store/useAppStore";
 import { common, colors } from "../theme";
 import PrimaryButton from "../components/PrimaryButton";
 import { validateProduct } from "../utils/validators";
 export default function AddProductScreen({
   navigation,
 }: NativeStackScreenProps<RootStackParamList, "Alta">) {
-  const { addProduct, busy } = useApp();
+  const addProduct = useAppStore((state) => state.addProduct);
+  const busy = useAppStore((state) => state.busy);
   const [name, setName] = useState("");
   const [quantity, setQuantity] = useState("1");
   const [error, setError] = useState("");

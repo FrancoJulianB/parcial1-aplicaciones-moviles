@@ -3,22 +3,20 @@ import { View, Text, FlatList, Alert, Button, StyleSheet } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { RootStackParamList } from "../types";
-import { useApp } from "../context/AppContext";
+import { useAppStore } from "../store/useAppStore";
 import { common, colors } from "../theme";
 import PrimaryButton from "../components/PrimaryButton";
 import ProductItem from "../components/ProductItem";
 export default function HomeScreen({
   navigation,
 }: NativeStackScreenProps<RootStackParamList, "Home">) {
-  const {
-    username,
-    products,
-    busy,
-    logout,
-    toggleProduct,
-    deleteProduct,
-    remind,
-  } = useApp();
+  const username = useAppStore((state) => state.username);
+  const products = useAppStore((state) => state.products);
+  const busy = useAppStore((state) => state.busy);
+  const logout = useAppStore((state) => state.logout);
+  const toggleProduct = useAppStore((state) => state.toggleProduct);
+  const deleteProduct = useAppStore((state) => state.deleteProduct);
+  const remind = useAppStore((state) => state.remind);
   const pending = products.filter((p) => !p.bought).length;
   async function perform(action: () => Promise<void>) {
     try {
